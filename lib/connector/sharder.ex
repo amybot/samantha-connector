@@ -68,8 +68,8 @@ defmodule Connector.Sharder do
       |> Enum.to_list
       if length(shard_map) < shard_count do
         # Pre-populate with shard IDs
+        Logger.info "Pre-populating shard IDs for #{inspect bot_name}"
         for shard <- 0..(shard_count - 1) do
-          Logger.info "Pre-populating shard IDs for #{inspect bot_name}"
           Redis.q ["HSET", reg, shard |> Integer.to_string, "-1"]
         end
       end
