@@ -82,8 +82,8 @@ defmodule Connector.Sharder do
         {shard, _} = available_shards |> List.first
         Logger.info "Shard #{inspect shard} available, connecting!"
         # Write this to the registry as the first heartbeat
-        Redis.q ["HSET", reg, shard, :os.system_time(:millisecond)]
-        :timer.sleep(250)
+        Redis.q ["HSET", reg, shard, :os.system_time(:millisecond) |> Integer.to_string]
+        Redis.q ["SET", conn, :os.system_time(:millisecond) |> Integer.to_string]
         Mutex.release(:smutex, lock)
         {:reply, %{
           "bot_name"    => bot_name,
@@ -92,7 +92,6 @@ defmodule Connector.Sharder do
         }, state}
       else
         Logger.info "No shards available, not connecting!"
-        :timer.sleep(250)
         Mutex.release(:smutex, lock)
         {:reply, %{
           "bot_name"    => bot_name,
@@ -101,7 +100,6 @@ defmodule Connector.Sharder do
       end
     else
       Mutex.release(:smutex, lock)
-      :timer.sleep(250)
       Logger.info "Connecting too fast, not connecting!"
       {:reply, %{
           "bot_name"    => bot_name,
