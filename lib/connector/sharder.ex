@@ -43,7 +43,7 @@ defmodule Connector.Sharder do
     Logger.info "Attempting to connect #{inspect bot_name}"
 
     # Check in redis to see when the last connect was
-    reg = reg_name packet["bot_name"]
+    reg = reg_name bot_name
     conn = "#{reg}-last-connect"
     {:ok, res} = Redis.q ["GET", conn]
     last_connect = case res do
@@ -80,21 +80,21 @@ defmodule Connector.Sharder do
         # Write this to the registry as the first heartbeat
         Redis.q ["HSET", reg, shard, :os.system_time(:millisecond)]
         {:reply, %{
-          "bot_name"    => packet["bot_name"],
+          "bot_name"    => bot_name,
           "can_connect" => true,
           "shard_id"    => shard
         }, state}
       else
         Logger.info "No shards available, not connecting!"
         {:reply, %{
-          "bot_name"    => packet["bot_name"],
+          "bot_name"    => bot_name,
           "can_connect" => false,
         }, state}
       end
     else
       Logger.info "Connecting too fast, not connecting!"
       {:reply, %{
-          "bot_name"    => packet["bot_name"],
+          "bot_name"    => bot_name,
           "can_connect" => false,
         }, state}
     end
