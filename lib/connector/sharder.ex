@@ -70,7 +70,11 @@ defmodule Connector.Sharder do
         # Pre-populate with shard IDs
         Logger.info "Pre-populating shard IDs for #{inspect bot_name}"
         for shard <- 0..(shard_count - 1) do
-          Redis.q ["HSET", reg, shard |> Integer.to_string, "-1"]
+          if is_integer shard do
+            unless is_nil shard do
+              Redis.q ["HSET", reg, shard |> Integer.to_string, "-1"]
+            end
+          end
         end
       end
       # Check the last shard connect time for all shards
