@@ -15,4 +15,4 @@ RUN mix deps.get
 
 RUN mix compile
 
-CMD iex -S mix run
+CMD mix run --no-halt
