@@ -34,7 +34,7 @@ defmodule Connector.Sharder do
   end
 
   def handle_call({:connect, packet}, _from, state) do
-    GenServer.call Amelia, {:lock, :shard_connect}
+    lock = Mutex.await(:smutex, :shard_connect)
     # Our input looks like
     # %{
     #   "bot_name"    => "my-cool-bot",
@@ -75,6 +75,7 @@ defmodule Connector.Sharder do
       end
       # Check the last shard connect time for all shards
       available_shards = shard_map
+      |> Enum.filter(fn {a, b} -> a != nil and b != nil end)
       |> Enum.filter(fn {_, heartbeat_time} -> heartbeat_time + @shard_timeout < now end)
       |> Enum.to_list
       unless length(available_shards) == 0 do
@@ -82,7 +83,7 @@ defmodule Connector.Sharder do
         Logger.info "Shard #{inspect shard} available, connecting!"
         # Write this to the registry as the first heartbeat
         Redis.q ["HSET", reg, shard, :os.system_time(:millisecond)]
-        GenServer.call Amelia, {:unlock, :shard_connect}
+        Mutex.release(:smutex, lock)
         {:reply, %{
           "bot_name"    => bot_name,
           "can_connect" => true,
@@ -90,14 +91,14 @@ defmodule Connector.Sharder do
         }, state}
       else
         Logger.info "No shards available, not connecting!"
-        GenServer.call Amelia, {:unlock, :shard_connect}
+        Mutex.release(:smutex, lock)
         {:reply, %{
           "bot_name"    => bot_name,
           "can_connect" => false,
         }, state}
       end
     else
-      GenServer.call Amelia, {:unlock, :shard_connect}
+      Mutex.release(:smutex, lock)
       Logger.info "Connecting too fast, not connecting!"
       {:reply, %{
           "bot_name"    => bot_name,

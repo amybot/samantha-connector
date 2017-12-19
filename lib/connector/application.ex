@@ -12,7 +12,7 @@ defmodule Connector.Application do
       # Redis and clustering
       {Lace.Redis, %{redis_ip: System.get_env("REDIS_IP"), redis_port: 6379, pool_size: 10, redis_pass: System.get_env("REDIS_PASS")}},
       {Connector.Sharder, :ok},
-      {Amelia, []},
+      Mutex.child_spec(:smutex),
       #{Lace, %{name: "node_name", group: "group_name", cookie: "node_cookie"}},
 
       # Plug
