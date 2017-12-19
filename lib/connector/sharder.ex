@@ -66,7 +66,7 @@ defmodule Connector.Sharder do
       |> Enum.map(fn [a, b] -> {a, b |> String.to_integer} end)
       |> Enum.filter(fn {a, b} -> a != nil and b != nil end)
       |> Enum.to_list
-      if length(shard_map) == 0 do
+      if length(shard_map) < shard_count do
         # Pre-populate with shard IDs
         for shard <- 0..(shard_count - 1) do
           Logger.info "Pre-populating shard IDs for #{inspect bot_name}"
