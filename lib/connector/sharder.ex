@@ -41,7 +41,7 @@ defmodule Connector.Sharder do
     #   "shard_count" => 50000,
     # }
     bot_name = packet["bot_name"]
-    Logger.info "Attempting to connect #{inspect bot_name}"
+    #Logger.info "Attempting to connect #{inspect bot_name}"
 
     # Check in redis to see when the last connect was
     reg = reg_name bot_name
@@ -91,7 +91,7 @@ defmodule Connector.Sharder do
           "shard_id"    => shard
         }, state}
       else
-        Logger.info "No shards available, not connecting!"
+        #Logger.info "No shards available, not connecting!"
         Mutex.release(:smutex, lock)
         {:reply, %{
           "bot_name"    => bot_name,
@@ -100,7 +100,7 @@ defmodule Connector.Sharder do
       end
     else
       Mutex.release(:smutex, lock)
-      Logger.info "Connecting too fast, not connecting!"
+      #Logger.info "Connecting too fast, not connecting!"
       {:reply, %{
           "bot_name"    => bot_name,
           "can_connect" => false,
