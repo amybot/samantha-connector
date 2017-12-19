@@ -23,6 +23,7 @@ defmodule Connector.Mixfile do
   defp deps do
     [
       {:lace, github: "queer/lace"},
+      {:amelia, github: "queer/amelia"},
       {:plug, "~> 1.4"},
       {:cowboy, "~> 1.1"},
       {:poison, "~> 3.1"},

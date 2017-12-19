@@ -56,6 +56,8 @@ defmodule Connector.Sharder do
     now = :os.system_time(:millisecond)
     # If the last connection was more than @interval ms ago, we can connect
     if last_connect + @interval < now do
+      # Lock to prevent other PIDs from taking out shards
+      GenServer.call Amelia, {:lock, :shard_connect}
       shard_count = packet["shard_count"]
       # Find an available shard id
       {:ok, res} = Redis.q ["HGETALL", reg]
@@ -79,6 +81,7 @@ defmodule Connector.Sharder do
         Logger.info "Shard #{inspect shard} available, connecting!"
         # Write this to the registry as the first heartbeat
         Redis.q ["HSET", reg, shard, :os.system_time(:millisecond)]
+        GenServer.call Amelia, {:unlock, :shard_connect}
         {:reply, %{
           "bot_name"    => bot_name,
           "can_connect" => true,
@@ -86,6 +89,7 @@ defmodule Connector.Sharder do
         }, state}
       else
         Logger.info "No shards available, not connecting!"
+        GenServer.call Amelia, {:unlock, :shard_connect}
         {:reply, %{
           "bot_name"    => bot_name,
           "can_connect" => false,
