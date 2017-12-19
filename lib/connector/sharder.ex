@@ -34,6 +34,7 @@ defmodule Connector.Sharder do
   end
 
   def handle_call({:connect, packet}, _from, state) do
+    GenServer.call Amelia, {:lock, :shard_connect}
     # Our input looks like
     # %{
     #   "bot_name"    => "my-cool-bot",
@@ -57,13 +58,13 @@ defmodule Connector.Sharder do
     # If the last connection was more than @interval ms ago, we can connect
     if last_connect + @interval < now do
       # Lock to prevent other PIDs from taking out shards
-      GenServer.call Amelia, {:lock, :shard_connect}
       shard_count = packet["shard_count"]
       # Find an available shard id
       {:ok, res} = Redis.q ["HGETALL", reg]
       shard_map = res
       |> Enum.chunk(2)
       |> Enum.map(fn [a, b] -> {a, b |> String.to_integer} end)
+      |> Enum.filter(fn {a, b} -> a != nil and b != nil end)
       |> Enum.to_list
       if length(shard_map) == 0 do
         # Pre-populate with shard IDs
@@ -96,6 +97,7 @@ defmodule Connector.Sharder do
         }, state}
       end
     else
+      GenServer.call Amelia, {:unlock, :shard_connect}
       Logger.info "Connecting too fast, not connecting!"
       {:reply, %{
           "bot_name"    => bot_name,
