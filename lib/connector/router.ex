@@ -8,7 +8,7 @@ defmodule Connector.Router do
                    json_decoder: Poison
   plug :dispatch
 
-  get "/", do
+  get "/" do
     Logger.info "/ request"
     send_resp(conn, 200, "yes")
   end
