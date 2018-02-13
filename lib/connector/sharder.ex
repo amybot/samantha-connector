@@ -10,7 +10,7 @@ defmodule Connector.Sharder do
   # Only allow connecting a shard once every 6.5 seconds, just to be sure we dodge the OP2 ratelimit
   @interval 6500
   # How many ms a shard has before its heartbeats run out and it can be replaced
-  @shard_timeout 10000
+  @shard_timeout 5000
 
   def start_link(_) do
     GenServer.start_link __MODULE__, :ok, name: :sharder
@@ -31,6 +31,19 @@ defmodule Connector.Sharder do
     reg = reg_name packet["bot_name"]
     Redis.q ["HSET", reg, packet["shard_id"], :os.system_time(:millisecond)]
     {:noreply, state}
+  end
+
+  def handle_call({:release, packet}, _from, state) do
+    # Our input looks like
+    # %{
+    #   "bot_name" => "my-cool-bot"
+    #   "shard_id" => 1
+    # }
+    bot_name = packet["bot_name"]
+    shard_id = packet["shard_id"]
+    reg = reg_name bot_name
+    Redis.q ["HSET", reg, shard_id |> Integer.to_string, "-1"]
+    {:reply, %{"released" => true}}
   end
 
   def handle_call({:connect, packet}, _from, state) do
